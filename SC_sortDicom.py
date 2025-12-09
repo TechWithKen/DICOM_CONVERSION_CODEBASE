@@ -42,7 +42,7 @@ try:
     print(sort_dicom_images(dicom_images))
 except FileNotFoundError:
     print("NO FILE FOUND: The file that you need isn't present, please check that the file path is correct added.")
-except NotADirectoryError:
 
+except NotADirectoryError:
     print("NO FOLDER ADDED: The path to the file you have entered is not a valid folder path, please make sure/"
           "you enter the correct directory.")
