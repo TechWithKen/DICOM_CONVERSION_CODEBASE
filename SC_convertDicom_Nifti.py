@@ -61,7 +61,7 @@ try:
                 "dcm2niix",
                 "-o", output_folder,           # output folder
                 "-b", "n",                     # don't create JSON
-                "-f", f"{patient_name}_{seq_type}",     # filename template: protocol + sequence + series number
+                "-f", f"{patient_name}_{seq_type}",     # filename template: anonymized(patient name) + sequence weight
                 input_folder
             ])
 
