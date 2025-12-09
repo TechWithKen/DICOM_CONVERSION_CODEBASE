@@ -20,12 +20,13 @@ try:
 
 
         for dm_images in medical_images:
+
             if dm_images[-3:] == "dcm": # ensuring that only dicom files are checked and sorted. to avoid errors.
                 ds = pydicom.dcmread(f'{downloaded_data_path}/{dm_images}')
                 modality = ds.Modality
                 body_part_examined = ds.BodyPartExamined
+                patient_id = ds.PatientID.replace("..", "")# some patientID has the identifier .. at the end.
 
-                patient_id = ds.PatientID.replace("..", "") # some patientID has the identifier .. at the end.
                 if body_part_examined == "????":
                     body_part_examined = "missingBodyPart"
                 else:
@@ -33,7 +34,7 @@ try:
                     os.makedirs(pathway_med_images, exist_ok = True)  # create a folder but check first if it exists
                     source_file = f'{downloaded_data_path}/{dm_images}'
                     destination_folder = pathway_med_images
-                    shutil.copy(source_file, destination_folder) # transfer the file itself to the new location
+                    shutil.copy(source_file, destination_folder) # transfer the main DICOM file itself to the new location
             else:
                 pass
 
@@ -42,5 +43,6 @@ try:
 except FileNotFoundError:
     print("NO FILE FOUND: The file that you need isn't present, please check that the file path is correct added.")
 except NotADirectoryError:
+
     print("NO FOLDER ADDED: The path to the file you have entered is not a valid folder path, please make sure/"
           "you enter the correct directory.")
