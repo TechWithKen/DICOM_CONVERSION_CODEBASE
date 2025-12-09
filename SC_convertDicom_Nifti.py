@@ -8,12 +8,21 @@ try:
     dicom_images = os.listdir(downloaded_dicom_file)
 
     def convert_to_nifti(medical_images):
+        """NIFTI files are majorly used for MRI scans as they are gotten from the BRAIN.
+        since NIFTI is connected to Neuroimaging it's important to convert it to 3D. A NIFTI file is gotten from the
+        combination of multiple DICOM file (known as slices) combined and collated in a unique way that they form
+        together to form one bunch huge bunch of NIFTI file. This function is used to convert multiple slices of DICOM
+        files into one single unit of NIFTI file. However it also states the sequence it represents. T1 weighted and co.
+         """
 
 
         for d_file in medical_images:
             ds = pydicom.dcmread(f'{downloaded_dicom_file}/{d_file}')
 
             def detect_sequence(dicom_file):
+                """Useful to detect the sequence of the given dicom file, based of the protocol name and series
+                description. Sometimes it's from series name, other times it's from protocol name. Since there is
+                no one size fit all, both of them are concatenated to form a string, and then it's checked."""
 
 
                 dicom = pydicom.dcmread(f'{downloaded_dicom_file}/{dicom_file}')
@@ -40,7 +49,7 @@ try:
             patient_name = ds.PatientName
             series_uid = ds.SeriesInstanceUID
 
-            if series_uid not in series_to_seq:
+            if series_uid not in series_to_seq:  # Collate seriesID of DICOM files that are similar into one key
                 seq_type = detect_sequence(d_file)
                 series_to_seq[series_uid] = seq_type
 
@@ -58,7 +67,8 @@ try:
 
         return "Created Nifti Files Successfully."
 
-    print(convert_to_nifti(dicom_images))
+    if __name__ == "__main__":
+        print(convert_to_nifti(dicom_images))
 
 except FileNotFoundError:
     print("NO FILE FOUND: The file that you need isn't present, please check that the file path is correct added.")

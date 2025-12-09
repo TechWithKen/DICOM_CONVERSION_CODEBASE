@@ -39,7 +39,10 @@ try:
                 pass
 
         return "Sorted! please check your folder."
-    print(sort_dicom_images(dicom_images))
+
+    if __name__ == "__main__":
+        print(sort_dicom_images(dicom_images))
+
 except FileNotFoundError:
     print("NO FILE FOUND: The file that you need isn't present, please check that the file path is correct added.")
 

@@ -45,7 +45,8 @@ try:
                 pass
         return "All Dicom files present in folder has been anonymized successfully."
 
-    print(anon_dicom_images(dicom_images))
+    if __name__ == "__main__":
+        print(anon_dicom_images(dicom_images))
 
 except FileNotFoundError:
     print("NO FILE FOUND: The file that you need isn't present, please check that the file path is correct added.")
