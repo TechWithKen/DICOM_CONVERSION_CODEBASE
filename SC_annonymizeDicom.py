@@ -1,107 +1,125 @@
 """
 dicom_anonymizer.py
 
-This module anonymizes DICOM (Digital Imaging and Communications in Medicine)
-files by removing or modifying patient-identifiable metadata.
+This module anonymizes DICOM files by removing or modifying
+patient-identifiable metadata.
 
-
-The anonymization process works as follows:
-1. Each DICOM file is read.
-2. Metadata fields containing patient information are accessed.
-3. Identifiable fields are cleared or replaced.
-4. The modified DICOM file is saved as a new file, leaving the original intact.
-
-This module can process:
-- A single DICOM file.
-- A folder containing multiple DICOM files (recursively).
+It can process:
+- A single DICOM file
+- A folder containing multiple DICOM files
 
 Notes:
-- The module relies on the `pydicom` library.
-- Metadata is mutable, so new DICOM files are created instead of modifying
-  the originals.
-- The module is designed for ethical research and educational purposes only.
+- Uses the pydicom library
+- Original files are never overwritten
 """
 
 import pydicom
 import os
+import shutil
+
 
 def read_dicom_metadata(file_path):
     """
     :param file_path:
-    :return: tuple of three items (modality, body_part, acquisition_date
+    :return: tuple (modality, body_part, acquisition_date)
     """
-
     ds = pydicom.dcmread(file_path)
     modality = getattr(ds, "Modality", "NONE")
-    body_part = getattr(ds,"BodyPartExamined", "NONE")
+    body_part = getattr(ds, "BodyPartExamined", "NONE")
     acquisition_date = getattr(ds, "AcquisitionDate", "NONE")
-
     return modality, body_part, acquisition_date
 
 
 def create_output_path(user_folder):
     """
-    :param user_folder:
-    :return:
+    Creates 'Anonymized' folder inside the user directory
     """
-    created_folder = "Anonymized"
+    created_folder = os.path.join(user_folder, "Anonymized")
 
-    return os.path.join(user_folder, created_folder)
+    if not os.path.exists(created_folder):
+        os.makedirs(created_folder)
+
+    return created_folder
 
 
 def anonymize_patient_name(user_folder):
     """
-    :param user_folder:
-    :return:
+    Replaces patient name with safe auto-generated metadata
     """
-
     dicom_images = os.listdir(user_folder)
+
     for dicom_image in dicom_images:
         file_path = os.path.join(user_folder, dicom_image)
-        modality, body_part, acquisition_date = read_dicom_metadata(file_path)
 
         if not dicom_image.lower().endswith(".dcm"):
             continue
-        ds = pydicom.dcmread(dicom_images)
-        ds.patient_name = f'{modality}_{body_part}_{acquisition_date}'
 
-    return ds.PatientName
+        modality, body_part, acquisition_date = read_dicom_metadata(file_path)
+        ds = pydicom.dcmread(file_path)
+
+        # Safe replacement for PatientName
+        safe_name = f"{modality}_{body_part}_{acquisition_date}"
+        ds.PatientName = safe_name
+
+        # Save into anonymized output folder
+        output_path = create_output_path(user_folder)
+        save_path = os.path.join(output_path, dicom_image)
+        ds.save_as(save_path)
+
+    return "PatientName anonymization complete."
 
 
 def del_location_in_dicom(user_folder):
     """
-    :param user_folder:
-    :return:
+    Removes InstitutionName field if present
     """
+    output_folder = create_output_path(user_folder)
+    dicom_images = os.listdir(output_folder)
 
-    dicom_images = os.listdir(user_folder)
     for dicom_image in dicom_images:
-        file_path = os.path.join(user_folder, dicom_image)
+        file_path = os.path.join(output_folder, dicom_image)
 
-        if dicom_images[-3:] == "dcm":
-            ds = pydicom.dcmread(file_path)
+        if not dicom_image.lower().endswith(".dcm"):
+            continue
 
-            if "InstitutionName" in ds:
-                del ds.InstitutionName
+        ds = pydicom.dcmread(file_path)
 
-    return None
+        if hasattr(ds, "InstitutionName"):
+            del ds.InstitutionName
+
+        ds.save_as(file_path)
+
+    return "InstitutionName removed from anonymized files."
 
 
 def copy_anonymized(user_folder):
     """
-
-    :param user_folder
-    :return:
+    Ensures anonymized files are copied with numeric IDs
     """
+    output_folder = create_output_path(user_folder)
+    dicom_images = [
+        f for f in os.listdir(output_folder)
+        if f.lower().endswith(".dcm")
+    ]
 
-    dicom_images = os.listdir(user_folder)
+    final_folder = os.path.join(user_folder, "Anonymized_Final")
+    os.makedirs(final_folder, exist_ok=True)
 
     for index, dicom_image in enumerate(dicom_images):
-        if not dicom_image.lower().endswith(".dcm"):
-            continue
+        src = os.path.join(output_folder, dicom_image)
+        dst = os.path.join(final_folder, f"{index}.dcm")
+        shutil.copy(src, dst)
 
-        folder_location = "Anonymized"
-        file_id = f'{index}.dcm'
-        storage_path = os.path.join(user_folder, folder_location, file_id)
+    return "Final anonymized numeric copies saved."
 
-    return storage_path
+
+if __name__ == "__main__":
+    downloaded_data_path = " "
+
+    if downloaded_data_path == "":
+        print("Error: Please set downloaded_data_path to your DICOM folder.")
+    else:
+        print(anonymize_patient_name(downloaded_data_path))
+        print(del_location_in_dicom(downloaded_data_path ))
+        print(copy_anonymized(downloaded_data_path))
+        print("Anonymization Pipeline Completed Successfully.")
